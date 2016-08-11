@@ -1,0 +1,12 @@
+{
+  "name": "ecs-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "hapi": "^14.1.0",
+    "good": "^7.0.1",
+    "good-squeeze": "^4.0.0",
+    "good-file": "^6.0.1",
+    "good-console": "^6.1.2"
+  }
+}
