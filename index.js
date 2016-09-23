@@ -72,7 +72,7 @@ server.register({
     path: '/succeed/{n?}',
     handler: function (request, reply) {
       const n = (parseInt(request.params.n, 10) || 0) * 1000;
-      server.log(`waiting ${n} milliseconds`);
+      server.log(`waiting ${n} seconds`);
 
       setTimeout(() => {
         server.log('succeeding');
@@ -85,11 +85,25 @@ server.register({
     path: '/fail/{n?}',
     handler: function (request, reply) {
       const n = (parseInt(request.params.n, 10) || 0) * 1000;
-      server.log(`waiting ${n} milliseconds`);
+      server.log(`waiting ${n} seconds`);
 
       setTimeout(() => {
         server.log('failing');
         reply().code(500);
+      }, n);
+    }
+  },
+  {
+    method: 'GET',
+    path: '/hang/{n?}',
+    handler: function (request, reply) {
+      const n = (parseInt(request.params.n, 10) || 0) * 1000;
+      server.log(`waiting ${n} seconds`);
+
+      setTimeout(() => {
+        server.log('hanging');
+
+        while (true) { }
       }, n);
     }
   }, {
@@ -97,7 +111,7 @@ server.register({
     path: '/die/{n?}',
     handler: function (request, reply) {
       const n = (parseInt(request.params.n, 10) || 0) * 1000;
-      server.log(`waiting ${n} milliseconds`);
+      server.log(`waiting ${n} seconds`);
 
       setTimeout(() => {
         server.log('dying');
