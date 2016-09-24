@@ -41,6 +41,12 @@ server.register({
 
   server.route([{
     method: 'GET',
+    path: '/v1/health',
+    handler: function (request, reply) {
+      reply({ healthy: true });
+    }
+  }, {
+    method: 'GET',
     path: '/flip',
     handler: function (request, reply) {
       const from = Boolean(server.app.switch);
