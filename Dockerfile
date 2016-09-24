@@ -4,5 +4,5 @@ ADD . /app
 WORKDIR /app
 
 EXPOSE 8000
-RUN npm install
+RUN npm install --silent
 CMD ["node", "."]
