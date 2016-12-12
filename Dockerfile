@@ -1,8 +1,12 @@
 FROM node:6
 
-ADD . /app
 WORKDIR /app
 
-EXPOSE 8000
-RUN npm install --silent
-CMD ["node", "."]
+RUN npm install --global --silent yarn
+COPY package.json /app/package.json
+COPY yarn.lock /app/yarn.lock
+RUN yarn install
+
+ADD . /app
+
+CMD ["yarn", "start"]
