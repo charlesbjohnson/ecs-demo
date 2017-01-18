@@ -3,15 +3,23 @@
 const Good = require('good');
 const Hapi = require('hapi');
 
+const AsyncExceptionCallback = require('./plugins/async-exception-callback');
+const AsyncExceptionImmediateReply = require('./plugins/async-exception-immediate-reply');
+const AsyncExceptionPromise = require('./plugins/async-exception-promise');
+const NoReply = require('./plugins/no-reply-plugin');
+const ServerTimeoutCallback = require('./plugins/server-timeout-callback');
+const ServerTimeoutPromise = require('./plugins/server-timeout-promise');
+const SyncException = require('./plugins/sync-exception');
+
 const server = new Hapi.Server({
   connections: {
     routes: {
       payload: {
-        timeout: 5 * 1000
+        timeout: 1 * 1000
       },
       timeout: {
-        server: 10 * 1000,
-        socket: 20 * 1000
+        server: 2 * 1000,
+        socket: 10 * 1000
       }
     }
   }
@@ -23,28 +31,10 @@ server.connection({
   port: process.env.PORT || 8000
 });
 
-server.register({
-  register: Good,
-  options: {
-    reporters: {
-      stdout: [{
-        module: 'good-squeeze',
-        name: 'Squeeze',
-        args: [{log: '*', error: '*', request: '*', response: '*'}]
-      }, {
-        module: 'good-squeeze',
-        name: 'SafeJson'
-      }, 'stdout']
-    }
-  }
-}, err => {
-  if (err) {
-    throw err;
-  }
-
-  server.route([{
-    method: 'GET',
-    path: '/flip',
+server.route([{
+  method: 'GET',
+  path: '/flip',
+  config: {
     handler: function (request, reply) {
       const from = Boolean(server.app.switch);
       const to = !server.app.switch;
@@ -54,9 +44,11 @@ server.register({
 
       reply();
     }
-  }, {
-    method: 'GET',
-    path: '/status/{n?}',
+  }
+}, {
+  method: 'GET',
+  path: '/status/{n?}',
+  config: {
     handler: function (request, reply) {
       const path = server.app.switch ? 'succeed' : 'fail';
 
@@ -67,9 +59,11 @@ server.register({
         reply().code(response.statusCode);
       });
     }
-  }, {
-    method: 'GET',
-    path: '/succeed/{wait?}',
+  }
+}, {
+  method: 'GET',
+  path: '/succeed/{wait?}',
+  config: {
     handler: function (request, reply) {
       const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
 
@@ -79,9 +73,11 @@ server.register({
         reply();
       }, wait);
     }
-  }, {
-    method: 'GET',
-    path: '/fail/{wait?}',
+  }
+}, {
+  method: 'GET',
+  path: '/fail/{wait?}',
+  config: {
     handler: function (request, reply) {
       const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
 
@@ -91,9 +87,11 @@ server.register({
         reply().code(500);
       }, wait);
     }
-  }, {
-    method: 'GET',
-    path: '/block/{wait?}',
+  }
+}, {
+  method: 'GET',
+  path: '/block/{wait?}',
+  config: {
     handler: function (request, reply) {
       const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
       const now = Date.now();
@@ -106,9 +104,11 @@ server.register({
       request.log(['block'], {message: 'blocking'});
       reply();
     }
-  }, {
-    method: 'GET',
-    path: '/error/{wait?}',
+  }
+}, {
+  method: 'GET',
+  path: '/error/{wait?}',
+  config: {
     handler: function (request) {
       const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
 
@@ -118,9 +118,11 @@ server.register({
         throw new Error('error');
       }, wait);
     }
-  }, {
-    method: 'GET',
-    path: '/roulette/{n?}',
+  }
+}, {
+  method: 'GET',
+  path: '/roulette/{n?}',
+  config: {
     handler: function (request, reply) {
       const fortune = Math.random() * 100;
       const path = fortune < 75 ? 'succeed' : 'fail';
@@ -132,7 +134,30 @@ server.register({
         reply().code(response.statusCode);
       });
     }
-  }]);
+  }
+}]);
+
+server.register([
+  {
+    register: Good,
+    options: {
+      reporters: {
+        stdout: [{
+          module: 'good-squeeze',
+          name: 'Squeeze',
+          args: [{log: '*', error: '*', request: '*', response: '*'}]
+        }, {
+          module: 'good-squeeze',
+          name: 'SafeJson'
+        }, 'stdout']
+      }
+    }
+  },
+  {register: new AsyncExceptionCallback('onRequest')}
+], err => {
+  if (err) {
+    throw err;
+  }
 
   server.start(err => {
     if (err) {
