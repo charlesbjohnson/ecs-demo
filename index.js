@@ -3,13 +3,7 @@
 const Good = require('good');
 const Hapi = require('hapi');
 
-const AsyncExceptionCallback = require('./plugins/async-exception-callback');
-const AsyncExceptionImmediateReply = require('./plugins/async-exception-immediate-reply');
-const AsyncExceptionPromise = require('./plugins/async-exception-promise');
-const NoReply = require('./plugins/no-reply-plugin');
-const ServerTimeoutCallback = require('./plugins/server-timeout-callback');
-const ServerTimeoutPromise = require('./plugins/server-timeout-promise');
-const SyncException = require('./plugins/sync-exception');
+const Plugins = require('./plugins');
 
 const server = new Hapi.Server({
   connections: {
@@ -18,17 +12,39 @@ const server = new Hapi.Server({
         timeout: 1 * 1000
       },
       timeout: {
-        server: 2 * 1000,
+        server: 5 * 1000,
         socket: 10 * 1000
       }
     }
   }
 });
 
+server.connection({port: process.env.PORT || 8000});
+
 server.app.switch = true;
 
-server.connection({
-  port: process.env.PORT || 8000
+server.method('wait', (request, next, options) => {
+  options = Object.assign({block: false, action: 'action'}, options);
+
+  const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
+  const message = `${options.action}ing`;
+
+  request.log([options.action, 'wait'], {wait});
+
+  if (options.block) {
+    const now = Date.now();
+    while (Math.abs(now - Date.now()) < wait) {
+      // eslint-disable-next-line no-empty
+    }
+
+    request.log([options.action], {message});
+    return next();
+  }
+
+  setTimeout(() => {
+    request.log([options.action], {message});
+    next();
+  }, wait);
 });
 
 server.route([{
@@ -65,13 +81,7 @@ server.route([{
   path: '/succeed/{wait?}',
   config: {
     handler: function (request, reply) {
-      const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
-
-      request.log(['succeed', 'wait'], {wait});
-      setTimeout(() => {
-        request.log(['succeed'], {message: 'succeeding'});
-        reply();
-      }, wait);
+      server.methods.wait(request, () => reply(), {action: 'succeed'});
     }
   }
 }, {
@@ -79,13 +89,7 @@ server.route([{
   path: '/fail/{wait?}',
   config: {
     handler: function (request, reply) {
-      const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
-
-      request.log(['fail', 'wait'], {wait});
-      setTimeout(() => {
-        request.log(['fail'], {message: 'failing'});
-        reply().code(500);
-      }, wait);
+      server.methods.wait(request, () => reply().code(500), {action: 'fail'});
     }
   }
 }, {
@@ -93,16 +97,10 @@ server.route([{
   path: '/block/{wait?}',
   config: {
     handler: function (request, reply) {
-      const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
-      const now = Date.now();
-
-      request.log(['block', 'wait'], {wait});
-      while (Math.abs(now - Date.now()) < wait) {
-        // eslint-disable-next-line no-empty
-      }
-
-      request.log(['block'], {message: 'blocking'});
-      reply();
+      server.methods.wait(request, () => reply(), {
+        action: 'block',
+        block: true
+      });
     }
   }
 }, {
@@ -110,13 +108,9 @@ server.route([{
   path: '/error/{wait?}',
   config: {
     handler: function (request) {
-      const wait = (parseInt(request.params.wait, 10) || 0) * 1000;
-
-      request.log(['error', 'wait'], {wait});
-      setTimeout(() => {
-        request.log(['error'], {message: 'erroring'});
+      server.methods.wait(request, () => {
         throw new Error('error');
-      }, wait);
+      }, {action: 'error'});
     }
   }
 }, {
