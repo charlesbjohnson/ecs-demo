@@ -1,10 +1,12 @@
-FROM node:6
+FROM node:7
 
 WORKDIR /app
 
 RUN npm install --global --silent yarn
-COPY package.json /app/package.json
-COPY yarn.lock /app/yarn.lock
+
+ADD package.json /app/package.json
+ADD yarn.lock /app/yarn.lock
+
 RUN yarn install
 
 ADD . /app
