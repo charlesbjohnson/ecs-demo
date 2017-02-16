@@ -150,6 +150,9 @@ server.register([{
 }, {
   register: new Plugins.WaitCallback('onRequest'),
   options: {wait: 100}
+}, {
+  register: new Plugins.WaitCallback('onPreAuth'),
+  options: {wait: 100}
 }], err => {
   if (err) {
     throw err;

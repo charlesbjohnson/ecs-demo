@@ -11,7 +11,9 @@
     "bluebird": "3.x.x",
     "good": "7.x.x",
     "good-squeeze": "5.x.x",
-    "hapi": "16.x.x"
+    "hapi": "16.x.x",
+    "lodash.difference": "^4.5.0",
+    "lodash.omit": "^4.5.0"
   },
   "devDependencies": {
     "xo": "0.x.x"
