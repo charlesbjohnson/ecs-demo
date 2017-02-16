@@ -3,6 +3,7 @@
 const Good = require('good');
 const Hapi = require('hapi');
 
+const Instrument = require('./instrument');
 const Plugins = require('./plugins');
 
 const server = new Hapi.Server({
@@ -20,7 +21,6 @@ const server = new Hapi.Server({
 });
 
 server.connection({port: process.env.PORT || 8000});
-
 server.app.switch = true;
 
 server.method('wait', (request, next, options) => {
@@ -131,24 +131,26 @@ server.route([{
   }
 }]);
 
-server.register([
-  {
-    register: Good,
-    options: {
-      reporters: {
-        stdout: [{
-          module: 'good-squeeze',
-          name: 'Squeeze',
-          args: [{log: '*', error: '*', request: '*', response: '*'}]
-        }, {
-          module: 'good-squeeze',
-          name: 'SafeJson'
-        }, 'stdout']
-      }
+server.register([{
+  register: Instrument
+}, {
+  register: Good,
+  options: {
+    reporters: {
+      stdout: [{
+        module: 'good-squeeze',
+        name: 'Squeeze',
+        args: [{log: '*', error: '*', request: '*', response: '*'}]
+      }, {
+        module: 'good-squeeze',
+        name: 'SafeJson'
+      }, 'stdout']
     }
-  },
-  {register: new AsyncExceptionCallback('onRequest')}
-], err => {
+  }
+}, {
+  register: new Plugins.WaitCallback('onRequest'),
+  options: {wait: 100}
+}], err => {
   if (err) {
     throw err;
   }
