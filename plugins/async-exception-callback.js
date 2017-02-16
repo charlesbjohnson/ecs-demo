@@ -5,7 +5,7 @@ function AsyncExceptionCallback(type) {
     server.ext(type, () => {
       setTimeout(() => {
         throw new Error('AsyncException');
-      }, 1000);
+      }, 100);
     });
 
     next();

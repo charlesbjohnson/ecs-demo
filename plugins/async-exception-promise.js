@@ -5,7 +5,7 @@ const Bluebird = require('bluebird');
 function AsyncExceptionPromise(type) {
   this.register = (server, options, next) => {
     server.ext(type, () => {
-      Bluebird.delay(1000).then(() => {
+      Bluebird.delay(100).then(() => {
         throw new Error('AsyncException');
       });
     });

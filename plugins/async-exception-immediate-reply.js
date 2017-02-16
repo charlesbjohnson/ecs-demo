@@ -7,9 +7,9 @@ function AsyncExceptionImmediateReply(type) {
     server.ext(type, (request, reply) => {
       setTimeout(() => {
         throw new Error('AsyncException');
-      }, 1000);
+      }, 100);
 
-      Bluebird.delay(1000).then(() => {
+      Bluebird.delay(100).then(() => {
         throw new Error('AsyncException');
       });
 
